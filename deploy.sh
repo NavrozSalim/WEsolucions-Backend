@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Deployment script for Contabo VPS
-# This script helps deploy the application to your Contabo VPS
+# This script helps deploy the Django application to your Contabo VPS
 
 set -e
 
@@ -18,8 +18,10 @@ NC='\033[0m' # No Color
 if [ ! -f .env ]; then
     echo -e "${YELLOW}⚠️  Warning: .env file not found. Creating default .env...${NC}"
     cat > .env << 'EOF'
-PORT=3000
-NODE_ENV=production
+DEBUG=False
+SECRET_KEY=your-secret-key-change-this-in-production
+ALLOWED_HOSTS=*
+PORT=8000
 DATABASE_URL=postgresql://postgres:NSP0122%40150@db.hihygeuawvzzrundvzev.supabase.co:5432/postgres
 SUPABASE_DB_HOST=db.hihygeuawvzzrundvzev.supabase.co
 SUPABASE_DB_PORT=5432
@@ -75,14 +77,17 @@ if docker ps | grep -q wesolucions-backend; then
     docker-compose ps
     echo ""
     echo "🌐 Application URLs:"
-    echo "   http://localhost:3000"
-    echo "   http://localhost:3000/health"
+    echo "   http://localhost:8000"
+    echo "   http://localhost:8000/health"
+    echo "   http://localhost:8000/admin"
     echo ""
     echo "📝 View logs with: docker-compose logs -f"
     echo "📝 Restart with: docker-compose restart"
     echo "📝 Stop with: docker-compose down"
+    echo ""
+    echo "💡 To run migrations: docker-compose exec backend python manage.py migrate"
+    echo "💡 To create superuser: docker-compose exec backend python manage.py createsuperuser"
 else
     echo -e "${YELLOW}⚠️  Container may not be running. Check logs with: docker-compose logs${NC}"
     exit 1
 fi
-
