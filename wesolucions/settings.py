@@ -162,19 +162,37 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS settings
-CORS_ALLOW_ALL_ORIGINS = DEBUG  # Only allow all origins in development
+# Get Vercel frontend URL from environment
+VERCEL_FRONTEND_URL = os.getenv('VERCEL_FRONTEND_URL', '')
+
+# Production CORS origins
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
     "http://127.0.0.1:3000",
     "http://127.0.0.1:5173",
+    "https://w-esolucions-frontend.vercel.app",
 ]
+
+# Add Vercel domain if provided
+if VERCEL_FRONTEND_URL:
+    if VERCEL_FRONTEND_URL not in CORS_ALLOWED_ORIGINS:
+        CORS_ALLOWED_ORIGINS.append(VERCEL_FRONTEND_URL)
+
+# Allow all origins in development, specific origins in production
+CORS_ALLOW_ALL_ORIGINS = DEBUG
 
 # CSRF settings
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
+    "https://w-esolucions-frontend.vercel.app",
 ]
+
+# Add Vercel domain if provided
+if VERCEL_FRONTEND_URL:
+    if VERCEL_FRONTEND_URL not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(VERCEL_FRONTEND_URL)
 
 # File upload settings
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
