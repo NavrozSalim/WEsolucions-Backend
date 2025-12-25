@@ -19,34 +19,51 @@ django.setup()
 # Import WSGI application
 from wesolucions.wsgi import application
 
-# Vercel serverless function handler
+# Vercel serverless function handler (standard format)
 def handler(request):
     """Handle incoming requests for Vercel."""
     from io import BytesIO
     
-    # Build WSGI environ from Vercel request
+    # Extract path from request
+    path = request.path if hasattr(request, 'path') else '/'
+    if path.startswith('/api'):
+        path = path[4:] if len(path) > 4 else '/'
+    
+    # Build WSGI environ
     environ = {
-        'REQUEST_METHOD': request.method,
-        'PATH_INFO': request.path,
-        'QUERY_STRING': request.query_string.decode() if request.query_string else '',
-        'CONTENT_TYPE': request.headers.get('content-type', ''),
-        'CONTENT_LENGTH': str(len(request.body)) if request.body else '0',
+        'REQUEST_METHOD': request.method if hasattr(request, 'method') else 'GET',
+        'PATH_INFO': path,
+        'SCRIPT_NAME': '',
+        'QUERY_STRING': '',
+        'CONTENT_TYPE': request.headers.get('content-type', '') if hasattr(request, 'headers') else '',
+        'CONTENT_LENGTH': '0',
         'SERVER_NAME': 'localhost',
         'SERVER_PORT': '80',
+        'SERVER_PROTOCOL': 'HTTP/1.1',
         'wsgi.version': (1, 0),
         'wsgi.url_scheme': 'https',
-        'wsgi.input': BytesIO(request.body) if request.body else BytesIO(),
+        'wsgi.input': BytesIO(),
         'wsgi.errors': sys.stderr,
         'wsgi.multithread': False,
         'wsgi.multiprocess': True,
         'wsgi.run_once': False,
     }
     
-    # Add HTTP headers
-    for key, value in request.headers.items():
-        key = key.upper().replace('-', '_')
-        if key not in ('CONTENT_TYPE', 'CONTENT_LENGTH'):
-            environ[f'HTTP_{key}'] = value
+    # Add headers if available
+    if hasattr(request, 'headers'):
+        for key, value in request.headers.items():
+            key = key.upper().replace('-', '_')
+            if key not in ('CONTENT_TYPE', 'CONTENT_LENGTH'):
+                environ[f'HTTP_{key}'] = value
+    
+    # Handle request body
+    if hasattr(request, 'body') and request.body:
+        environ['CONTENT_LENGTH'] = str(len(request.body))
+        environ['wsgi.input'] = BytesIO(request.body)
+    
+    # Handle query string
+    if hasattr(request, 'query_string') and request.query_string:
+        environ['QUERY_STRING'] = request.query_string.decode() if isinstance(request.query_string, bytes) else request.query_string
     
     # Call WSGI application
     response_data = {'status': None, 'headers': []}
@@ -55,20 +72,25 @@ def handler(request):
         response_data['status'] = status
         response_data['headers'] = headers
     
-    result = application(environ, start_response)
-    
-    # Collect response body
-    body = b''.join(result)
-    
-    # Parse status code
-    status_code = int(response_data['status'].split()[0])
-    
-    # Convert headers to dict
-    headers_dict = dict(response_data['headers'])
-    
-    return {
-        'statusCode': status_code,
-        'headers': headers_dict,
-        'body': body.decode('utf-8')
-    }
+    try:
+        result = application(environ, start_response)
+        body = b''.join(result)
+        
+        # Parse status code
+        status_code = int(response_data['status'].split()[0]) if response_data['status'] else 200
+        
+        # Convert headers to dict
+        headers_dict = {k: v for k, v in response_data['headers']}
+        
+        return {
+            'statusCode': status_code,
+            'headers': headers_dict,
+            'body': body.decode('utf-8', errors='ignore')
+        }
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'headers': {'Content-Type': 'application/json'},
+            'body': f'{{"error": "{str(e)}"}}'
+        }
 
