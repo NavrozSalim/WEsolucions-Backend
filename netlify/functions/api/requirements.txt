@@ -1,0 +1,4 @@
+# Netlify function dependencies
+# Netlify will install from root requirements.txt automatically
+# This file is here for reference
+
