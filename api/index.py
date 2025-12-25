@@ -11,10 +11,17 @@ sys.path.insert(0, str(BASE_DIR))
 
 # Set Django settings module
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'wesolucions.settings')
+# Mark as Vercel environment
+os.environ['VERCEL'] = '1'
 
 # Import Django and setup
 import django
 django.setup()
+
+# Suppress static files warnings
+import warnings
+warnings.filterwarnings('ignore', message='No directory at')
+warnings.filterwarnings('ignore', category=UserWarning, module='django.core.handlers.base')
 
 # Import WSGI application
 from wesolucions.wsgi import application

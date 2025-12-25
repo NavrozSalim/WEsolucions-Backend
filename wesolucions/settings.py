@@ -152,7 +152,16 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Disable WhiteNoise on Vercel (serverless functions don't serve static files well)
+# Static files should be handled by Vercel's CDN or disabled
+if os.getenv('VERCEL'):
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+    # Suppress static files warnings on Vercel
+    import warnings
+    warnings.filterwarnings('ignore', message='No directory at')
+else:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files
 MEDIA_URL = '/media/'
