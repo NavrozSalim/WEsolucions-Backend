@@ -197,7 +197,9 @@ for frontend_url in [VERCEL_FRONTEND_URL, NETLIFY_FRONTEND_URL]:
         CORS_ALLOWED_ORIGINS.append(frontend_url)
 
 # Allow all origins in development, specific origins in production
-CORS_ALLOW_ALL_ORIGINS = DEBUG
+# For local backend with Vercel frontend, allow all origins if DEBUG=True
+# Otherwise, use specific origins list
+CORS_ALLOW_ALL_ORIGINS = DEBUG or os.getenv('ALLOW_ALL_ORIGINS', 'False').lower() == 'true'
 
 # CORS headers and methods
 CORS_ALLOW_HEADERS = [
