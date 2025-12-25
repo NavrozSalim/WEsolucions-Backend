@@ -35,13 +35,13 @@ INSTALLED_APPS = [
     'export',
 ]
 
-# Build middleware list conditionally - disable WhiteNoise on Vercel
+# Build middleware list conditionally - disable WhiteNoise on serverless platforms
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
 ]
 
-# Only add WhiteNoise if not on Vercel
-if not os.getenv('VERCEL'):
+# Only add WhiteNoise if not on serverless platforms (Vercel/Netlify)
+if not (os.getenv('VERCEL') or os.getenv('NETLIFY')):
     MIDDLEWARE.append('whitenoise.middleware.WhiteNoiseMiddleware')
 
 MIDDLEWARE.extend([
@@ -160,11 +160,11 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# Disable WhiteNoise on Vercel (serverless functions don't serve static files well)
-# Static files should be handled by Vercel's CDN or disabled
-if os.getenv('VERCEL'):
+# Disable WhiteNoise on serverless platforms (Vercel/Netlify)
+# Static files should be handled by platform's CDN or disabled
+if os.getenv('VERCEL') or os.getenv('NETLIFY'):
     STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
-    # Suppress static files warnings on Vercel
+    # Suppress static files warnings on serverless platforms
     import warnings
     warnings.filterwarnings('ignore', message='No directory at')
 else:
@@ -178,8 +178,9 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS settings
-# Get Vercel frontend URL from environment
+# Get frontend URLs from environment
 VERCEL_FRONTEND_URL = os.getenv('VERCEL_FRONTEND_URL', '')
+NETLIFY_FRONTEND_URL = os.getenv('NETLIFY_FRONTEND_URL', '')
 
 # Production CORS origins
 CORS_ALLOWED_ORIGINS = [
@@ -190,10 +191,10 @@ CORS_ALLOWED_ORIGINS = [
     "https://w-esolucions-frontend.vercel.app",
 ]
 
-# Add Vercel domain if provided
-if VERCEL_FRONTEND_URL:
-    if VERCEL_FRONTEND_URL not in CORS_ALLOWED_ORIGINS:
-        CORS_ALLOWED_ORIGINS.append(VERCEL_FRONTEND_URL)
+# Add frontend domains if provided
+for frontend_url in [VERCEL_FRONTEND_URL, NETLIFY_FRONTEND_URL]:
+    if frontend_url and frontend_url not in CORS_ALLOWED_ORIGINS:
+        CORS_ALLOWED_ORIGINS.append(frontend_url)
 
 # Allow all origins in development, specific origins in production
 CORS_ALLOW_ALL_ORIGINS = DEBUG
@@ -229,10 +230,10 @@ CSRF_TRUSTED_ORIGINS = [
     "https://w-esolucions-frontend.vercel.app",
 ]
 
-# Add Vercel domain if provided
-if VERCEL_FRONTEND_URL:
-    if VERCEL_FRONTEND_URL not in CSRF_TRUSTED_ORIGINS:
-        CSRF_TRUSTED_ORIGINS.append(VERCEL_FRONTEND_URL)
+# Add frontend domains if provided
+for frontend_url in [VERCEL_FRONTEND_URL, NETLIFY_FRONTEND_URL]:
+    if frontend_url and frontend_url not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(frontend_url)
 
 # File upload settings
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB

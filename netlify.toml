@@ -1,0 +1,10 @@
+[build]
+  command = "pip install -r requirements.txt && python manage.py collectstatic --noinput"
+  functions = "netlify/functions"
+
+[[plugins]]
+  package = "@netlify/plugin-lambda"
+
+[build.environment]
+  PYTHON_VERSION = "3.11"
+
