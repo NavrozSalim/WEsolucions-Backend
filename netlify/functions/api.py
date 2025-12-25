@@ -31,11 +31,22 @@ def handler(event, context):
     
     try:
         # Parse Netlify event
-        path = event.get('path', '/')
+        raw_path = event.get('path', '/')
         method = event.get('httpMethod', 'GET')
         headers = event.get('headers', {})
         body = event.get('body', '')
         query_string = event.get('queryStringParameters', {})
+        
+        # Handle Netlify function path - remove /.netlify/functions/api prefix if present
+        # This allows rewrites from /api/* to work correctly
+        if raw_path.startswith('/.netlify/functions/api'):
+            path = raw_path.replace('/.netlify/functions/api', '', 1) or '/'
+        elif raw_path.startswith('/api'):
+            # Already has /api prefix, use as is
+            path = raw_path
+        else:
+            # No prefix, assume it's an API call
+            path = raw_path
         
         # Convert query string to string
         if query_string:
