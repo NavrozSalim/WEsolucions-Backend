@@ -13,14 +13,14 @@ sys.path.insert(0, str(BASE_DIR))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'wesolucions.settings')
 os.environ['NETLIFY'] = '1'  # Mark as Netlify environment
 
-# Import Django
-import django
-django.setup()
-
-# Suppress warnings
+# Suppress warnings before Django setup
 import warnings
 warnings.filterwarnings('ignore', message='No directory at')
 warnings.filterwarnings('ignore', category=UserWarning, module='django.core.handlers.base')
+
+# Import Django
+import django
+django.setup()
 
 # Import WSGI application
 from wesolucions.wsgi import application
